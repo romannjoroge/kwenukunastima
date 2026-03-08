@@ -7,7 +7,7 @@ import { Search, ZapOff, Zap, HelpCircle } from 'lucide-react';
 
 interface CheckFormProps {
   onResult: (lat: number, lng: number) => void;
-  onWantToReport: (lat: number, lng: number) => void;
+  onWantToReport: (place: google.maps.places.PlaceResult) => void;
 }
 
 export function CheckForm({ onResult, onWantToReport }: CheckFormProps) {
@@ -75,7 +75,7 @@ export function CheckForm({ onResult, onWantToReport }: CheckFormProps) {
                 <h3 className="font-bold text-slate-800 text-xl">Hatujui vizuri... 🤔</h3>
                 <p className="text-slate-600 text-sm">Hakuna mtu amereport hii area recently.</p>
                 <button 
-                  onClick={() => selectedPlace?.geometry?.location && onWantToReport(selectedPlace.geometry.location.lat(), selectedPlace.geometry.location.lng())}
+                  onClick={() => selectedPlace && onWantToReport(selectedPlace)}
                   className="bg-slate-800 text-white px-6 py-2 rounded-full font-semibold hover:bg-slate-700 transition-colors shadow-md"
                 >
                   Sema kama uko na stima

@@ -12,10 +12,12 @@ export default function Home() {
 
   // States to toggle between forms
   const [activeForm, setActiveForm] = useState<'check' | 'report'>('check');
+  const [sharedPlace, setSharedPlace] = useState<google.maps.places.PlaceResult | null>(null);
 
-  const scrollToMap = (lat: number, lng: number) => {
-    // Pan Map
+  const scrollToMap = async (lat: number, lng: number) => {
+    // Refresh and Pan Map
     if (mapRef.current) {
+      await mapRef.current.refresh();
       mapRef.current.panTo(lat, lng);
     }
     // Scroll page to map smoothly
@@ -24,11 +26,9 @@ export default function Home() {
     }
   };
 
-  const handleWantToReport = (lat: number, lng: number) => {
+  const handleWantToReport = (place: google.maps.places.PlaceResult) => {
+    setSharedPlace(place);
     setActiveForm('report');
-    // Pre-filling the form with coordinates accurately requires a slightly different approach,
-    // but toggling to the report tab is the main user experience flow.
-    // In a real scenario we'd pass the coordinate to ReportForm via state or context.
   };
 
   return (
@@ -83,7 +83,7 @@ export default function Home() {
                 </div>
               ) : (
                 <div key="report" className="animate-in slide-in-from-right-8 fade-in duration-300">
-                  <ReportForm onReported={scrollToMap} />
+                  <ReportForm onReported={scrollToMap} initialPlace={sharedPlace} />
                 </div>
               )}
             </div>

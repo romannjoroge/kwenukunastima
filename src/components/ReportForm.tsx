@@ -7,10 +7,11 @@ import { Megaphone, Zap, ZapOff } from 'lucide-react';
 
 interface ReportFormProps {
   onReported: (lat: number, lng: number) => void;
+  initialPlace?: google.maps.places.PlaceResult | null;
 }
 
-export function ReportForm({ onReported }: ReportFormProps) {
-  const [selectedPlace, setSelectedPlace] = useState<google.maps.places.PlaceResult | null>(null);
+export function ReportForm({ onReported, initialPlace }: ReportFormProps) {
+  const [selectedPlace, setSelectedPlace] = useState<google.maps.places.PlaceResult | null>(initialPlace || null);
   const [hasStima, setHasStima] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -43,7 +44,7 @@ export function ReportForm({ onReported }: ReportFormProps) {
       <div className="space-y-6">
         <div>
           <label className="block text-sm font-semibold text-slate-600 mb-2">Location ya Kwenu</label>
-          <LocationAutocomplete onPlaceSelect={setSelectedPlace} />
+          <LocationAutocomplete onPlaceSelect={setSelectedPlace} initialPlace={initialPlace} />
         </div>
         
         <div>

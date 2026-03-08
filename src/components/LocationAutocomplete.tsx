@@ -7,29 +7,67 @@ interface LocationAutocompleteProps {
   onPlaceSelect: (place: google.maps.places.PlaceResult | null) => void;
   placeholder?: string;
   className?: string;
+  initialPlace?: google.maps.places.PlaceResult | null;
 }
 
-export function LocationAutocomplete({ onPlaceSelect, placeholder = 'Weka location yako...', className = '' }: LocationAutocompleteProps) {
-  const [inputValue, setInputValue] = useState('');
+export function LocationAutocomplete({ onPlaceSelect, placeholder = 'Weka location yako...', className = '', initialPlace }: LocationAutocompleteProps) {
+  const [inputValue, setInputValue] = useState(initialPlace?.name || initialPlace?.formatted_address || '');
   const inputRef = useRef<HTMLInputElement>(null);
   const places = useMapsLibrary('places');
+  const geocoding = useMapsLibrary('geocoding');
   const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
 
   useEffect(() => {
+    if (initialPlace) return; // Skip getting user geolocation if an initial place was passed
+    if (!geocoding) return;
+
     // Attempt to get user's current location to set as default input value text
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         async (pos) => {
-          // Ideally use geocoding here to get a string name, but to keep it simple and limit API calls:
-          setInputValue(`Current Location (${pos.coords.latitude.toFixed(2)}, ${pos.coords.longitude.toFixed(2)})`);
-          // We don't automatically trigger select here, we just pre-fill. A real geocoder could turn this into a place name.
-          // To simplify, we'll let the user type if they want something specific.
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          
+          try {
+            const geocoder = new geocoding.Geocoder();
+            const response = await geocoder.geocode({ location: { lat, lng } });
+            
+            if (response.results && response.results.length > 0) {
+              const result = response.results[0];
+              const address = result.formatted_address;
+              setInputValue(address);
+              
+              const simulatedPlace = {
+                ...result,
+                name: address,
+              } as unknown as google.maps.places.PlaceResult;
+              
+              onPlaceSelect(simulatedPlace);
+            } else {
+              const fallbackStr = `Current location (${lat.toFixed(2)}, ${lng.toFixed(2)})`;
+              setInputValue(fallbackStr);
+              onPlaceSelect({
+                formatted_address: fallbackStr,
+                name: fallbackStr,
+                geometry: { location: { lat: () => lat, lng: () => lng } as any }
+              } as google.maps.places.PlaceResult);
+            }
+          } catch (e) {
+            console.error('Geocoding failed', e);
+            const fallbackStr = `Current location (${lat.toFixed(2)}, ${lng.toFixed(2)})`;
+            setInputValue(fallbackStr);
+            onPlaceSelect({
+              formatted_address: fallbackStr,
+              name: fallbackStr,
+              geometry: { location: { lat: () => lat, lng: () => lng } as any }
+            } as google.maps.places.PlaceResult);
+          }
         },
         (err) => console.log('Geolocation skipped', err),
         { timeout: 5000 }
       );
     }
-  }, []);
+  }, [geocoding, onPlaceSelect, initialPlace]);
 
   useEffect(() => {
     if (!places || !inputRef.current) return;
